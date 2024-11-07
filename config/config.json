@@ -1,0 +1,33 @@
+{
+  "epochs": 50,
+  "retain_valid_dataset": {
+    "type": "Task2SimpleDataset",
+    "args": {
+      "parquet_file": "semeval25-unlearning-data/data/retain_validation-00000-of-00001.parquet"
+    }
+  },
+  "retain_valid_dataloader": {
+    "type": "Task2SimpleDataLoader",
+    "args": {
+      "shuffle": false,
+      "batch_size": 1,
+      "num_workers": 1,
+      "drop_last": false
+    }
+  },
+  "forget_valid_dataset": {
+    "type": "Task2SimpleDataset",
+    "args": {
+      "parquet_file": "semeval25-unlearning-data/data/forget_validation-00000-of-00001.parquet"
+    }
+  },
+  "forget_valid_dataloader": {
+    "type": "Task2SimpleDataLoader",
+    "args": {
+      "shuffle": false,
+      "batch_size": 1,
+      "num_workers": 1,
+      "drop_last": false
+    }
+  }
+}
