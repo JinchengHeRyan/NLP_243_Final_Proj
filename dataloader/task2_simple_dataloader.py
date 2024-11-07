@@ -25,7 +25,6 @@ class Task2SimpleDataLoader(DataLoader):
     def collate_fn(self, batch):
         batch = list(zip(*batch))
         input_ids, output_ids = batch
-        print("input_ids: ", input_ids)
         input_ids = torch.nn.utils.rnn.pad_sequence(
             input_ids, batch_first=True, padding_value=-100
         )
