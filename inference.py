@@ -18,13 +18,20 @@ def compute_rouge(model, data_loader, tokenizer):
 
     model.eval()
 
-    for i, (input_ids, output_ids) in enumerate(tqdm(data_loader, ncols=80)):
+    for i, batch in enumerate(tqdm(data_loader, ncols=80)):
         with torch.no_grad():
-            pred_ids = model.generate(input_ids, max_length=128)
+            input_ids = batch["input_ids"]
+            output_ids = batch["labels"]
+            attention_mask = batch["attention_mask"]
+            pred_ids = model.generate(
+                input_ids=input_ids,
+                max_length=128,
+            )
 
             pred_text = tokenizer.decode(pred_ids[0], skip_special_tokens=True)
+
             output_text = tokenizer.decode(
-                output_ids[0], skip_special_tokens=True
+                [id for id in output_ids[0] if id != -100], skip_special_tokens=True
             )  # ground truth output text
 
             rouge_l_score = scorer.score(output_text, pred_text)["rougeL"].fmeasure
