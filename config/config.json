@@ -3,7 +3,8 @@
   "retain_valid_dataset": {
     "type": "Task2SimpleDataset",
     "args": {
-      "parquet_file": "semeval25-unlearning-data/data/retain_validation-00000-of-00001.parquet"
+      "parquet_file": "semeval25-unlearning-data/data/retain_validation-00000-of-00001.parquet",
+      "max_length": 64
     }
   },
   "retain_valid_dataloader": {
@@ -18,7 +19,8 @@
   "forget_valid_dataset": {
     "type": "Task2SimpleDataset",
     "args": {
-      "parquet_file": "semeval25-unlearning-data/data/forget_validation-00000-of-00001.parquet"
+      "parquet_file": "semeval25-unlearning-data/data/forget_validation-00000-of-00001.parquet",
+      "max_length": 64
     }
   },
   "forget_valid_dataloader": {
