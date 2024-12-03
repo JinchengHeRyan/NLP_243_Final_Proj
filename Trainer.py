@@ -32,6 +32,94 @@ class Trainer:
         self.epochs = epochs
         self.print_freq = print_freq
 
+    def _train_mix_ga_da_epoch(self, epoch):
+        self.model.train()
+        losses = AverageVal()
+
+        retain_losses = AverageVal()
+        forget_losses = AverageVal()
+
+        datatime = 0
+        batchtime = 0
+        tic = time.time()
+
+        for i, (retain_batch, forget_batch) in enumerate(
+            zip(self.retain_trainloader, self.forget_trainloader)
+        ):
+            datatime += time.time() - tic
+
+            retain_input_ids = retain_batch["input_ids"]
+            retain_attention_mask = retain_batch["attention_mask"]
+            retain_labels = retain_batch["labels"]
+
+            forget_input_ids = forget_batch["input_ids"]
+            forget_attention_mask = forget_batch["attention_mask"]
+            forget_labels = forget_batch["labels"]
+
+            retain_outputs = self.model(
+                input_ids=retain_input_ids,
+                attention_mask=retain_attention_mask,
+                labels=retain_labels,
+            )
+            forget_outputs = self.model(
+                input_ids=forget_input_ids,
+                attention_mask=forget_attention_mask,
+                labels=forget_labels,
+            )
+
+            retain_loss = retain_outputs.loss
+            forget_loss = forget_outputs.loss
+
+            loss = (
+                retain_loss
+                - 0.5 * (retain_loss.item() / forget_loss.item()) * forget_loss
+            )
+
+            losses.update(loss.item())
+            retain_losses.update(retain_loss.item())
+            forget_losses.update(forget_loss.item())
+
+            self.accelerator.backward(loss)
+            self.optimizer.step()
+            self.optimizer.zero_grad()
+
+            batchtime += time.time() - tic
+            tic = time.time()
+
+            if (i + 1) % self.print_freq == 0:
+                self.logger.info(
+                    "[Train] Epoch:{} [{:03d}/{:03d}]({:.0f}%)\t"
+                    "Time:{:.3f}/{:.3f}\tLoss:({:.4f}){:.4f}\tRetain_loss:({:.4f}){:.4f}\tForget_loss:({:.4f}){:.4f}".format(
+                        epoch,
+                        i + 1,
+                        len(
+                            list(zip(self.retain_trainloader, self.forget_trainloader))
+                        ),
+                        (i + 1)
+                        / len(
+                            list(zip(self.retain_trainloader, self.forget_trainloader))
+                        )
+                        * 100,
+                        datatime,
+                        batchtime,
+                        losses.val,
+                        losses.avg,
+                        retain_losses.val,
+                        retain_losses.avg,
+                        forget_losses.val,
+                        forget_losses.avg,
+                    )
+                )
+                datatime = 0
+                batchtime = 0
+
+        self.logger.info(
+            "[Train Summary] Epoch:{}\tTotal Loss:{:.4f}\t Retain Loss:{:.4f}\t Forget Loss:{:.4f}".format(
+                epoch, losses.avg, retain_losses.avg, forget_losses.avg
+            )
+        )
+        return losses.avg
+
     def _train_ga_da_epoch(self, dataloader, operation, epoch):
         assert operation in ["ga", "gd"]
 
@@ -99,7 +187,7 @@ class Trainer:
 
     def train(self):
         for epoch in range(self.epochs):
-            self._train_epoch(epoch)
+            self._train_mix_ga_da_epoch(epoch)
         unwrapped_model = self.accelerator.unwrap_model(self.model)
         unwrapped_model.save_pretrained(
             self.chkpt_dir,
