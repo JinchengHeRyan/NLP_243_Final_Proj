@@ -3,10 +3,18 @@ debug: false
 deepspeed_config:
   gradient_accumulation_steps: 1
   gradient_clipping: 1.0
-  offload_optimizer_device: cpu
-  offload_param_device: cpu
+  offload_optimizer_device: nvme
+  offload_optimizer_nvme_path: /home/jhe516/repo/parameter_offload
+  offload_param_device: nvme
+  offload_param_nvme_path: /home/jhe516/repo/parameter_offload
   zero3_init_flag: false
   zero_stage: 2
+  fp16:
+    enabled: true
+    initial_scale_power: 12
+    loss_scale_window: 1000
+    hysteresis: 2
+    min_loss_scale: 1
 distributed_type: DEEPSPEED
 downcast_bf16: 'no'
 enable_cpu_affinity: false
