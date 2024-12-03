@@ -1,11 +1,15 @@
+from transformers.trainer_utils import is_main_process
+
 from utils.average import AverageVal
 import time
+from accelerate import Accelerator
 
 
 class Trainer:
     def __init__(
         self,
-        accelerator,
+        accelerator: Accelerator,
+        chkpt_dir,
         model,
         optimizer,
         retain_trainloader,
@@ -17,6 +21,7 @@ class Trainer:
         print_freq=10,
     ):
         self.accelerator = accelerator
+        self.chkpt_dir = chkpt_dir
         self.model = model
         self.optimizer = optimizer
         self.retain_trainloader = retain_trainloader
@@ -95,3 +100,9 @@ class Trainer:
     def train(self):
         for epoch in range(self.epochs):
             self._train_epoch(epoch)
+        unwrapped_model = self.accelerator.unwrap_model(self.model)
+        unwrapped_model.save_pretrained(
+            self.chkpt_dir,
+            is_main_process=self.accelerator.is_main_process,
+            save_function=self.accelerator.save,
+        )
