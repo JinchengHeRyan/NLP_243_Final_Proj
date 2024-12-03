@@ -65,6 +65,15 @@ def main(config, name, print_freq):
         retain_valid_dataloader,
         forget_valid_dataloader,
     )
+
+    # Set checkpoint directory
+    chkpt_dir = os.path.join("chkpt", name)
+    os.makedirs(chkpt_dir, exist_ok=True)
+
+    # Save the config in the checkpoint directory
+    with open(os.path.join(chkpt_dir, "config.json"), "w") as wfile:
+        json.dump(config, wfile, indent=4, sort_keys=False)
+
     # Set logger
     log_dir = os.path.join("logs", name)
     os.makedirs(log_dir, exist_ok=True)
@@ -83,6 +92,7 @@ def main(config, name, print_freq):
 
     trainer = Trainer(
         accelerator=accelerator,
+        chkpt_dir=chkpt_dir,
         model=model,
         optimizer=optimizer,
         retain_trainloader=retain_train_dataloader,
