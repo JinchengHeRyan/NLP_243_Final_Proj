@@ -30,7 +30,6 @@
 % However, it will improve the aesthetics of text in
 % the typewriter font.
 \usepackage{inconsolata}
-\usepackage{hyperref}
 \usepackage{booktabs}
 
 
@@ -127,69 +126,68 @@
         \item \textbf{Embedding Corrupted(ECO)~\cite{liu2024largelanguagemodelunlearning}:} Embedding Corruption, or ECO, selectively perturbs embeddings associated with sensitive tokens or phrases, reducing the likelihood of these terms influencing the model’s predictions. This method focus the same problem as input-based strategy allows for targeted forgetting, as corrupted embeddings prevent sensitive terms from being highly activated in response to user prompts, effectively erasing their influence on generated outputs.
         \item \textbf{Project Gradient Descent~\cite{Wei2024ProvableUI}:}Project Gradient Descent (PGD) is an optimization-based unlearning method that operates by projecting parameter updates onto a subspace defined by specific constraints. The goal is to adjust the model parameters to unlearn sensitive information while preserving the generalization capability for non-sensitive tasks. PGD modifies the embedding or parameter space to selectively minimize the influence of the sensitive content while retaining the overall utility of the model. The process, as illustrated in the equation below, incorporates the Hessian inverse \( H_{C_i^S}^{-1} \), which provides curvature information of the loss landscape around sensitive parameters, facilitating targeted updates:
 
-\begin{equation}
-    \bar{C}_i^F \leftarrow C_i^S - H_{C_i^S}^{-1} \nabla \mathcal{L}(C_i^S, S \setminus S_f)
-\end{equation}
+        \begin{equation}
+            \bar{C}_i^F \leftarrow C_i^S - H_{C_i^S}^{-1} \nabla \mathcal{L}(C_i^S, S \setminus S_f)
+        \end{equation}
 
-Here, \( \bar{C}_i^F \) represents the updated parameters after unlearning, \( C_i^S \) is the original set of parameters associated with the sensitive content, \( \nabla \mathcal{L} \) is the gradient of the loss function, and \( S \setminus S_f \) denotes the dataset excluding the sensitive content. By leveraging this projection-based approach, PGD ensures precise unlearning while avoiding significant degradation in overall performance.
+        Here, \( \bar{C}_i^F \) represents the updated parameters after unlearning, \( C_i^S \) is the original set of parameters associated with the sensitive content, \( \nabla \mathcal{L} \) is the gradient of the loss function, and \( S \setminus S_f \) denotes the dataset excluding the sensitive content. By leveraging this projection-based approach, PGD ensures precise unlearning while avoiding significant degradation in overall performance.
 
 %%NPO
-\item \textbf{Negative Preference Optimization (NPO)~\cite{zhang2024negative}:}  
-NPO reformulates unlearning as a preference optimization problem, addressing the limitations of gradient ascent methods in large language model unlearning. The optimization framework is:
-\vspace{-3pt}
-\[
-\theta_{t+1} = \theta_t - \alpha \nabla_{\theta} \mathcal{L}_{\text{NPO}}(\theta_t)
-\]
+        \item \textbf{Negative Preference Optimization (NPO)~\cite{zhang2024negative}:}
+        NPO reformulates unlearning as a preference optimization problem, addressing the limitations of gradient ascent methods in large language model unlearning. The optimization framework is:
+        \vspace{-3pt}
+        \[
+            \theta_{t+1} = \theta_t - \alpha \nabla_{\theta} \mathcal{L}_{\text{NPO}}(\theta_t)
+        \]
 
-where $\mathcal{L}_{\text{NPO}}$ is the loss function, and $\theta_t$ are the model parameters. NPO's loss is:
+        where $\mathcal{L}_{\text{NPO}}$ is the loss function, and $\theta_t$ are the model parameters. NPO's loss is:
 
-\[
-\resizebox{\columnwidth}{!}{$\mathcal{L}_{\text{NPO}} = -\mathbf{E}_{(x,y) \sim \mathcal{D}_{\text{forget}}} \left[ \log \left(1 - \frac{\pi_\theta(y|x)}{\pi_\theta(y|x) + \pi_{\text{ref}}(y|x)} \right) \right]$}
-\]
+        \[
+            \resizebox{\columnwidth}{!}{$\mathcal{L}_{\text{NPO}} = -\mathbf{E}_{(x,y) \sim \mathcal{D}_{\text{forget}}} \left[ \log \left(1 - \frac{\pi_\theta(y|x)}{\pi_\theta(y|x) + \pi_{\text{ref}}(y|x)} \right) \right]$}
+        \]
 
 
-An enhanced version incorporates a retain loss term:
-\vspace{-3pt}
-\[
-\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{NPO}} + \beta \mathcal{L}_{\text{retain}}
-\]
+        An enhanced version incorporates a retain loss term:
+        \vspace{-3pt}
+        \[
+            \mathcal{L}_{\text{total}} = \mathcal{L}_{\text{NPO}} + \beta \mathcal{L}_{\text{retain}}
+        \]
 
-\textbf{Advantages:}
-\begin{itemize}
-    \item \textbf{Improved Stability:} Slower divergence and more stable training dynamics.  
-    \item \textbf{Catastrophic Collapse Prevention:} Minimizes collapse more gradually than gradient ascent.  
-    \item \textbf{Effective Unlearning:} Balances forgetting and model utility.  
-    \item \textbf{Scalability:} Outperforms existing methods in forgetting large amounts of data.  
-\end{itemize}
+        \textbf{Advantages:}
+        \begin{itemize}
+            \item \textbf{Improved Stability:} Slower divergence and more stable training dynamics.
+            \item \textbf{Catastrophic Collapse Prevention:} Minimizes collapse more gradually than gradient ascent.
+            \item \textbf{Effective Unlearning:} Balances forgetting and model utility.
+            \item \textbf{Scalability:} Outperforms existing methods in forgetting large amounts of data.
+        \end{itemize}
 
-NPO offers a robust, efficient method for unlearning undesirable content without complete retraining, making it a strong alternative to gradient ascent-based techniques.
+        NPO offers a robust, efficient method for unlearning undesirable content without complete retraining, making it a strong alternative to gradient ascent-based techniques.
 
 
 %% SimNPO
-\item \textbf{Simplistic Negative Preference Optimization (SimNPO)~\cite{fan2024simplicity} }
-SimNPO improves Negative Preference Optimization (NPO) by eliminating the need for a reference model, addressing the bias that can undermine NPO’s effectiveness in unlearning forget data with varying difficulty. The optimization rule is:
-\vspace{-3pt}
-\[
-\theta_{t+1} = \theta_t - \alpha \nabla_{\theta} \mathcal{L}_{\text{SimNPO}}(\theta_t)
-\]
+        \item \textbf{Simplistic Negative Preference Optimization (SimNPO)~\cite{fan2024simplicity} }
+        SimNPO improves Negative Preference Optimization (NPO) by eliminating the need for a reference model, addressing the bias that can undermine NPO’s effectiveness in unlearning forget data with varying difficulty. The optimization rule is:
+        \vspace{-3pt}
+        \[
+            \theta_{t+1} = \theta_t - \alpha \nabla_{\theta} \mathcal{L}_{\text{SimNPO}}(\theta_t)
+        \]
 
-where $\mathcal{L}_{\text{SimNPO}}$ consists of three terms:
-\vspace{-3pt}
-\[
-\mathcal{L}_{\text{SimNPO}} = \mathcal{L}_{\text{forget}} + \beta \mathcal{L}_{\text{retain}} + \gamma \mathcal{L}_{\text{reg}}
-\]
+        where $\mathcal{L}_{\text{SimNPO}}$ consists of three terms:
+        \vspace{-3pt}
+        \[
+            \mathcal{L}_{\text{SimNPO}} = \mathcal{L}_{\text{forget}} + \beta \mathcal{L}_{\text{retain}} + \gamma \mathcal{L}_{\text{reg}}
+        \]
 
-with $\beta = 0.3$, $\gamma = 0.1$.  
+        with $\beta = 0.3$, $\gamma = 0.1$.
 
-\textbf{Advantages:}
-\begin{itemize}
-    \item \textbf{Improved Effectiveness:} Handles varying unlearning difficulty without reference model bias.
-    \item \textbf{Simplicity:} Lightweight and easier to implement than reference-based methods.
-    \item \textbf{Theoretical Insights:} Supported by Markov chain analysis, offering deeper understanding.
-\end{itemize}
+        \textbf{Advantages:}
+        \begin{itemize}
+            \item \textbf{Improved Effectiveness:} Handles varying unlearning difficulty without reference model bias.
+            \item \textbf{Simplicity:} Lightweight and easier to implement than reference-based methods.
+            \item \textbf{Theoretical Insights:} Supported by Markov chain analysis, offering deeper understanding.
+        \end{itemize}
 
-SimNPO offers a more efficient and robust method for unlearning undesirable content in large language models.
-
+        SimNPO offers a more efficient and robust method for unlearning undesirable content in large language models.
 
 
     \end{enumerate}
@@ -198,48 +196,49 @@ SimNPO offers a more efficient and robust method for unlearning undesirable cont
     \section{Experiments}
     We will compare model performance against a baseline, measuring the extent of sensitive content suppression and the model's general accuracy on language tasks. Control studies with annotated prompts will test sensitivity handling.
 
-\subsection{Methodology}
-The training and evaluation process incorporated the following steps:
-\begin{itemize}
-    \item \textbf{Gradient Adjustment Operations:} We implemented four gradient adjustment operations to address sensitive content:
+    \subsection{Methodology}
+    The training and evaluation process incorporated the following steps:
     \begin{itemize}
-        \item \textbf{Randomization (Ran):} Labels of the forget set were randomized at each batch iteration.
-        \item \textbf{Gradient Descent (GD):} Standard gradient descent was applied to the retain set to ensure general task performance.
-        \item \textbf{Gradient Ascent (GA):} Gradient ascent was performed on the forget set to minimize its influence on the model.
-        \item \textbf{Projected Gradient Descent (PGD):} Gradients from the forget set were projected to reduce interference with gradients from the retain set.
+        \item \textbf{Gradient Adjustment Operations:} We implemented four gradient adjustment operations to address sensitive content:
+        \begin{itemize}
+            \item \textbf{Randomization (Ran):} Labels of the forget set were randomized at each batch iteration.
+            \item \textbf{Gradient Descent (GD):} Standard gradient descent was applied to the retain set to ensure general task performance.
+            \item \textbf{Gradient Ascent (GA):} Gradient ascent was performed on the forget set to minimize its influence on the model.
+            \item \textbf{Projected Gradient Descent (PGD):} Gradients from the forget set were projected to reduce interference with gradients from the retain set.
+        \end{itemize}
+        \item \textbf{Combined Loss Function:} A weighted loss function was designed to integrate the contributions of Ran, GD, GA, and PGD operations:
+        \[
+            \text{Loss} = 0.25 \times (Loss_{Ran} + Loss_{GD} + Loss_{GD} + Loss_{PGD}).
+        \]
+        \item \textbf{Training Configuration:} Training was conducted for 10 epochs using a predefined model architecture and dataloaders. The model performance was monitored using loss trends across all four operations.
     \end{itemize}
-    \item \textbf{Combined Loss Function:} A weighted loss function was designed to integrate the contributions of Ran, GD, GA, and PGD operations:
-    \[
-    \text{Loss} = 0.25 \times (Loss_{Ran} + Loss_{GD} + Loss_{GD} + Loss_{PGD}).
-    \]
-    \item \textbf{Training Configuration:} Training was conducted for 10 epochs using a predefined model architecture and dataloaders. The model performance was monitored using loss trends across all four operations.
-\end{itemize}
 
-\subsection{Results}
-Figure~\ref{fig:training-loss} shows the training loss trends for each operation over 10 epochs. Key observations include:
-\begin{itemize}
-    \item \textbf{Ran Loss:} The low and stable loss across epochs indicates effective randomization of forget set labels, preventing the model from overfitting sensitive data.
-    \item \textbf{GD Loss:} The consistently low GD loss demonstrates that the model maintained strong performance on the retain set.
-    \item \textbf{GA Loss:} The steady increase in GA loss reflects the model's success in forgetting sensitive information by using gradient ascent.
-    \item \textbf{PGD Loss:} The gradual rise in PGD loss highlights the complexity of aligning the forget and retain gradients to preserve the retain set's knowledge while minimizing sensitive data influence.
-\end{itemize}
+    \subsection{Results}
+    Figure~\ref{fig:training-loss} shows the training loss trends for each operation over 10 epochs. Key observations include:
+    \begin{itemize}
+        \item \textbf{Ran Loss:} The low and stable loss across epochs indicates effective randomization of forget set labels, preventing the model from overfitting sensitive data.
+        \item \textbf{GD Loss:} The consistently low GD loss demonstrates that the model maintained strong performance on the retain set.
+        \item \textbf{GA Loss:} The steady increase in GA loss reflects the model's success in forgetting sensitive information by using gradient ascent.
+        \item \textbf{PGD Loss:} The gradual rise in PGD loss highlights the complexity of aligning the forget and retain gradients to preserve the retain set's knowledge while minimizing sensitive data influence.
+    \end{itemize}
 
-\begin{figure}[h!]
-    \centering
-    \resizebox{\columnwidth}{!}{%
-    \includegraphics[width=\textwidth]{plot/pgd-avgw.png}%
-    }
-    \caption{Training Loss per Epoch for Various Gradient Adjustment Operations.}
-    \label{fig:training-loss}
-\end{figure}
+    \begin{figure}[h!]
+        \centering
+        \resizebox{\columnwidth}{!}{%
+            \includegraphics[width=\textwidth]{plot/pgd-avgw}
+        }
+        \caption{Training Loss per Epoch for Various Gradient Adjustment Operations.}
+        \label{fig:training-loss}
+    \end{figure}
 
-\subsection{Analysis}
-The results validate the effectiveness of the implemented gradient adjustment operations:
-\begin{itemize}
-    \item \textbf{PGD Operation:} The increasing PGD loss suggests successful suppression of sensitive content while maintaining task performance.
-    \item \textbf{Balance of Losses:} The consistent Ran and GD losses indicate that randomization and gradient descent effectively maintained baseline performance and obfuscated sensitive data.
-\end{itemize}
-These findings demonstrate that advanced gradient operations can enable models to handle sensitive content while retaining task relevance.
+    \subsection{Analysis}
+    The results validate the effectiveness of the implemented gradient adjustment operations:
+    \begin{itemize}
+        \item \textbf{PGD Operation:} The increasing PGD loss suggests successful suppression of sensitive content while maintaining task performance.
+        \item \textbf{Balance of Losses:} The consistent Ran and GD losses indicate that randomization and gradient descent effectively maintained baseline performance and obfuscated sensitive data.
+    \end{itemize}
+    These findings demonstrate that advanced gradient operations can enable models to handle sensitive content while retaining task relevance.
+
 
     \section{Evaluation Metrics}
     Evaluation involves a Rouge-L score:
