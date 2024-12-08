@@ -1,6 +1,6 @@
 {
-  "epochs": 50,
-  "original_model_path": "semeval25-unlearning-model",
+  "epochs": 5,
+  "original_model_path": "semeval25-unlearning-1B-model",
   "tokenizer_pretrain_name": "allenai/OLMo-7B-0724-Instruct-hf",
   "retain_train_dataset": {
     "type": "Task2SimpleDataset",
@@ -69,7 +69,7 @@
   "optimizer": {
     "type": "Adam",
     "args": {
-      "lr": 0.000001
+      "lr": 5e-5
     }
   }
 }

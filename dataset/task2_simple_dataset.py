@@ -40,8 +40,9 @@ class Task2SimpleDataset(Dataset):
 
 if __name__ == "__main__":
     dataset = Task2SimpleDataset(
-        "../semeval25-unlearning-data/data/retain_train-00000-of-00001.parquet"
+        "/data/orlando/Documents/semeval/semeval25-unlearning-data/data/retain_train-00000-of-00001.parquet"
     )
     for i in range(5):
         print(dataset[i])
         break
+
