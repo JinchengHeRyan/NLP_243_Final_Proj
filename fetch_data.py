@@ -10,6 +10,13 @@ snapshot_download(
     token=hf_token,
     local_dir="semeval25-unlearning-model",
 )
+
+snapshot_download(
+    repo_id="llmunlearningsemeval2025organization/olmo-1B-model-semeval25-unlearning",
+    token=hf_token,
+    local_dir="semeval25-unlearning-1B-model",
+)
+
 model = AutoModelForCausalLM.from_pretrained("semeval25-unlearning-model")
 tokenizer = AutoTokenizer.from_pretrained("allenai/OLMo-7B-0724-Instruct-hf")
 
