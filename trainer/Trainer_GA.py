@@ -5,7 +5,7 @@ import time
 from accelerate import Accelerator
 
 
-class Trainer:
+class Trainer_GA:
     def __init__(
         self,
         accelerator: Accelerator,
