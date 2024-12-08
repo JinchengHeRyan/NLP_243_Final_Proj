@@ -30,6 +30,7 @@
 % However, it will improve the aesthetics of text in
 % the typewriter font.
 \usepackage{inconsolata}
+\usepackage{hyperref}
 \usepackage{booktabs}
 
 
@@ -123,6 +124,34 @@
             \theta_{t+1} = \theta_t + \lambda \nabla_{\theta} \mathcal{L}(\theta_t)
             \label{eq:ga}
         \end{equation}
+
+        \begin{enumerate}
+            \item{\textbf{Strategy 1:}}
+            For this strategy, we do gradient descent on the retain set and gradient ascent on the forget set for each epoch. So for each epoch, the retain set and the forget set will be trained separately.
+
+            \item{\textbf{Strategy 2:}}
+            For this strategy, the combined loss is calculated as equation~\ref{eq:ga_combined_loss}.
+            \begin{equation}
+                \mathcal{L} = \mathcal{L}_{\text{retain}} - \lambda\cdot\mathcal{L}_{\text{forget}}
+                \label{eq:ga_combined_loss}
+            \end{equation}
+            The disadvantage for this strategy is that $\mathcal{L}_\text{forget}$ will be very large while not constraining $\mathcal{L}_\text{retain}$.
+
+            \item{\textbf{Strategy 3:}}
+            For this strategy, a dynamic weight is assigned to the $\mathcal{L}_\text{forget}$, and the combined loss is shown as equation~\ref{eq:ga_dynamic_loss}.
+            \begin{equation}
+                \mathcal{L} = \mathcal{L}_{\text{retain}} - \lambda_\text{dynamic}\cdot\mathcal{L}_{\text{forget}}
+                \label{eq:ga_dynamic_loss}
+            \end{equation}
+            where
+            \begin{equation}
+                \lambda_\text{dynamic} = \lambda\cdot\frac{\mathcal{L}_\text{retain}}{\mathcal{L}_\text{forget}}
+            \end{equation}
+            The advantage for this strategy is to constrain $\mathcal{L}_\text{retain}$ while making $\mathcal{L}_\text{forget}$ large, since the optimization goal $\mathcal{L}$ is always linear to $\mathcal{L}_\text{retain}$ as shown in equation~\ref{eq:ga_dynamic_loss}.
+
+        \end{enumerate}
+
+
         \item \textbf{Embedding Corrupted(ECO)~\cite{liu2024largelanguagemodelunlearning}:} Embedding Corruption, or ECO, selectively perturbs embeddings associated with sensitive tokens or phrases, reducing the likelihood of these terms influencing the model’s predictions. This method focus the same problem as input-based strategy allows for targeted forgetting, as corrupted embeddings prevent sensitive terms from being highly activated in response to user prompts, effectively erasing their influence on generated outputs.
         \item \textbf{Project Gradient Descent~\cite{Wei2024ProvableUI}:}Project Gradient Descent (PGD) is an optimization-based unlearning method that operates by projecting parameter updates onto a subspace defined by specific constraints. The goal is to adjust the model parameters to unlearn sensitive information while preserving the generalization capability for non-sensitive tasks. PGD modifies the embedding or parameter space to selectively minimize the influence of the sensitive content while retaining the overall utility of the model. The process, as illustrated in the equation below, incorporates the Hessian inverse \( H_{C_i^S}^{-1} \), which provides curvature information of the loss landscape around sensitive parameters, facilitating targeted updates:
 
@@ -213,31 +242,8 @@
         \item \textbf{Training Configuration:} Training was conducted for 10 epochs using a predefined model architecture and dataloaders. The model performance was monitored using loss trends across all four operations.
     \end{itemize}
 
-    \subsection{Results}
-    Figure~\ref{fig:training-loss} shows the training loss trends for each operation over 10 epochs. Key observations include:
-    \begin{itemize}
-        \item \textbf{Ran Loss:} The low and stable loss across epochs indicates effective randomization of forget set labels, preventing the model from overfitting sensitive data.
-        \item \textbf{GD Loss:} The consistently low GD loss demonstrates that the model maintained strong performance on the retain set.
-        \item \textbf{GA Loss:} The steady increase in GA loss reflects the model's success in forgetting sensitive information by using gradient ascent.
-        \item \textbf{PGD Loss:} The gradual rise in PGD loss highlights the complexity of aligning the forget and retain gradients to preserve the retain set's knowledge while minimizing sensitive data influence.
-    \end{itemize}
-
-    \begin{figure}[h!]
-        \centering
-        \resizebox{\columnwidth}{!}{%
-            \includegraphics[width=\textwidth]{plot/pgd-avgw}
-        }
-        \caption{Training Loss per Epoch for Various Gradient Adjustment Operations.}
-        \label{fig:training-loss}
-    \end{figure}
-
-    \subsection{Analysis}
-    The results validate the effectiveness of the implemented gradient adjustment operations:
-    \begin{itemize}
-        \item \textbf{PGD Operation:} The increasing PGD loss suggests successful suppression of sensitive content while maintaining task performance.
-        \item \textbf{Balance of Losses:} The consistent Ran and GD losses indicate that randomization and gradient descent effectively maintained baseline performance and obfuscated sensitive data.
-    \end{itemize}
-    These findings demonstrate that advanced gradient operations can enable models to handle sensitive content while retaining task relevance.
+    \subsection{Preference Optimization Methods}
+    The above described preference optimization algorithms namely NPO, SimPO were implemented and were run for 5 epochs. As per the authors of the paper we are training it on forget\_set followed by the retain\_set training for each of those epochs. The parameters, $\boldsymbol{\beta}$  value is set as 0.1 for both the algorithms, and the $\boldsymbol{\gamma}$ value is set to 0.1 for SimNPO.
 
 
     \section{Evaluation Metrics}
@@ -265,6 +271,146 @@
     \subsection{Interpretation}
 
     A higher ROUGE-L score indicates a greater similarity between the generated summary and the reference summaries, suggesting better quality and coherence in the output. ROUGE-L is particularly useful in evaluating tasks where the preservation of the sequence and context of information is essential.
+
+
+    \section{Results}
+
+    \subsection{Gradient Ascent (GA)}
+
+    The training result of GA strategy 1 is shown in figure~\ref{fig:result_ga_strategy_1}. The $\mathcal{L}_\text{forget}$ is getting significantly higher than $\mathcal{L}_\text{retain}$.
+
+    \begin{figure}[!h]
+        \centering
+        \includegraphics[width=0.9\linewidth]{plot/ga_strategy_1.png}
+        \caption{Training Loss for GA strategy 1}
+        \label{fig:result_ga_strategy_1}
+    \end{figure}
+
+    The training results of GA strategy 2 and strategy 3 are shown in figure~\ref{fig:result_ga_strategy_2} and figure~\ref{fig:result_ga_strategy_3} respectively. Rouge-L results of all three strategies on evaluation set is shown in table~\ref{tab:results_ga}. We can see that using dynamic weight on $\mathcal{L}_\text{forget}$ can make model not being damaged.
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.9\linewidth]{plot/ga_strategy_2lambda_0.2.png}
+        \caption{Training Loss for GA strategy 2}
+        \label{fig:result_ga_strategy_2}
+    \end{figure}
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.9\linewidth]{plot/ga_strategy_3dynamic.png}
+        \caption{Training Loss for GA strategy 3}
+        \label{fig:result_ga_strategy_3}
+    \end{figure}
+
+    \begin{table}[!h]
+        \centering
+        \begin{tabular}{c|c|c}
+            \toprule
+            & Retain Set & Forget Set \\
+            \midrule
+            Original model & 0.7786     & 0.7692     \\
+            Strategy 1     & 0.1873     & 0.1979     \\
+            Strategy 2     & 0.1958     & 0.2283     \\
+            Strategy 3     & 0.5232     & 0.5532     \\
+            \bottomrule
+        \end{tabular}
+        \caption{Rouge-L results of different strategies for Gradient Ascent}
+        \label{tab:results_ga}
+    \end{table}
+
+    Some examples of model outputs of are shown in table~\ref{tab:ga_result_examples}. We can see that model can remember the correct answer in retain set and damage the answer in forget set.
+
+    \begin{table}[!htbp]
+        \centering
+        \resizebox{\columnwidth}{!}{
+            \begin{tabular}{c|l}
+                \toprule
+                Retain input  & What is the birth date of Fredericka Amber?     \\
+                Retain output & \textbf{1969-12-21}                             \\
+                Model output  & \textbf{1969-12-21}                             \\
+                \midrule
+                Forget input  & Who did Catherina seek to protect from Marcile? \\
+                Forget output & \textbf{The city of Deadesius.}                 \\
+                Model output  & \textbf{The city of Deades,,,?}                 \\
+                \bottomrule
+            \end{tabular}
+        }
+        \caption{Examples of model outputs from GA strategy 3}
+        \label{tab:ga_result_examples}
+    \end{table}
+
+    \subsection{Project Gradient Descent (PGD)}
+    Figure~\ref{fig:training-loss} shows the training loss trends for each operation over 10 epochs.
+    \begin{figure}[h!]
+        \centering
+        \resizebox{\columnwidth}{!}{%
+            \includegraphics[width=\textwidth]{plot/pgd-avgw}
+        }
+        \caption{Training Loss per Epoch for Various Gradient Adjustment Operations.}
+        \label{fig:training-loss}
+    \end{figure}
+
+    \begin{table}[h!]
+        \centering
+        \resizebox{\columnwidth}{!}{
+            \begin{tabular}{|l|c|c|}
+                \hline
+                \textbf{Model}          & \textbf{Forget Set ROUGE-L} & \textbf{Retain Set ROUGE-L} \\
+                \hline
+                PGD-average-weight      & 0.3419                      & 0.3380                      \\
+                PGD-0.1forget-0.3retain & 0.4317                      & 0.4819                      \\
+                \hline
+            \end{tabular}
+        }
+        \caption{Average ROUGE-L Scores for Forget and Retain Sets}
+        \label{tab:rouge_scores_pgd}
+    \end{table}
+
+    The results in Table \ref{tab:rouge_scores_pgd} highlight the effectiveness of the Project Gradient Descent (PGD) approach in balancing unlearning of sensitive content (Forget Set) while retaining the utility of the model (Retain Set). The average weight model achieves comparable ROUGE-L scores for the Forget Set (0.3419) and Retain Set (0.3380), indicating a uniform performance across both sets. However, the marginal difference in scores suggests that this approach may not be optimized for maximizing retention while performing targeted unlearning. The similarity in scores could imply overcorrection or insufficient sensitivity to the differences between the Forget and Retain sets. While PGD-0.1forget-0.3retain model significantly outperforms the PGD-average-weight variant, with a Forget Set ROUGE-L score of 0.4317 and a Retain Set ROUGE-L score of 0.4819. The higher score for the Retain Set indicates that this configuration better preserves the quality of outputs for non-sensitive data, while the Forget Set score reflects a more effective reduction in the influence of sensitive information. The larger gap between Forget Set and Retain Set scores suggests that this variant prioritizes retention quality while still effectively unlearning sensitive content.
+
+    \subsection{Preference Optimization}
+
+    \begin{figure}[htbp]
+        \centering
+        % Use the width option to control the size of the figure, adjust the figure size
+        \includegraphics[width=0.9\linewidth]{plot/NPO_train_curve}
+        \caption{Loss curve for NPO}
+        \label{fig:NPO-loss}
+    \end{figure}
+
+    \begin{figure}[htbp]
+        \centering
+        % Use the width option to control the size of the figure, adjust the figure size
+        \includegraphics[width=0.9\linewidth]{plot/SimNPO}
+        \caption{Loss curve for Simplistic NPO}
+        \label{fig:SimNPO-loss}
+    \end{figure}
+    In figures \ref{fig:NPO-loss},\ref{fig:SimNPO-loss} we can see that after every forget training , the retain loss starts from a higher values, this shows us that the model is forgetting. Also since the forget loss is low, this suggests that the model is learning in a different direction, thus the data that needs to be forgotten are erased.
+    After training using the preference optimization algorithms, the avg rouge scores were calculated on each set: as shown in table \ref{tab:rouge_scores_pref_optimization}
+    We can see that NPO model performed the best over the SimNPO model. This could be because of small epoch size or hyperparameter selection.
+    \begin{table}[htbp]
+        \centering
+        \resizebox{\columnwidth}{!}{
+            \begin{tabular}{|l|c|c|}
+                \hline
+                \textbf{Model} & \textbf{Forget Set ROUGE-L} & \textbf{Retain Set ROUGE-L} \\
+                \hline
+                SimNPO         & 0.9028                      & 0.3138                      \\
+                NPO            & 0.7802                      & 0.8580                      \\
+                \hline
+            \end{tabular}
+        }
+        \caption{Average ROUGE-L Scores for Forget and Retain Sets}
+        \label{tab:rouge_scores_pref_optimization}
+    \end{table}
+
+    \subsection{Analysis}
+    The results validate the effectiveness of the implemented gradient adjustment operations:
+    \begin{itemize}
+        \item \textbf{PGD Operation:} The increasing PGD loss suggests successful suppression of sensitive content while maintaining task performance.
+        \item \textbf{Balance of Losses:} The consistent Ran and GD losses indicate that randomization and gradient descent effectively maintained baseline performance and obfuscated sensitive data.
+    \end{itemize}
+    These findings demonstrate that advanced gradient operations can enable models to handle sensitive content while retaining task relevance.
 
 
     \section{Conclusion}
