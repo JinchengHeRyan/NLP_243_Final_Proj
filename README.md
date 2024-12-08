@@ -1,5 +1,10 @@
 # NLP 243 Final Project
 
+## Fetching Data
+
+Before start training, you need to fetch the data using script `fecth_data.py`. The script will download the dataset and
+7B and 1B finetuned model.
+
 ## Training
 
 ```bash
