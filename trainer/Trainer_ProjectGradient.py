@@ -4,21 +4,23 @@ import torch
 import os
 
 
-class Trainer:
+class Trainer_ProjectGradient:
     def __init__(
-            self,
-            accelerator,
-            model,
-            optimizer,
-            retain_trainloader,
-            forget_trainloader,
-            retain_validloader,
-            forget_validloader,
-            logger,
-            epochs,
-            print_freq=10,
+        self,
+        accelerator,
+        chkpt_dir,
+        model,
+        optimizer,
+        retain_trainloader,
+        forget_trainloader,
+        retain_validloader,
+        forget_validloader,
+        logger,
+        epochs,
+        print_freq=10,
     ):
         self.accelerator = accelerator
+        self.chkpt_dir = chkpt_dir
         self.model = model
         self.optimizer = optimizer
         self.retain_trainloader = retain_trainloader
@@ -36,11 +38,15 @@ class Trainer:
         projected_grads = []
         for g_s, g_n in zip(grad_sensitive, grad_normal):
             if g_s is not None and g_n is not None:
-                projection = torch.dot(g_s.flatten(), g_n.flatten()) / (torch.norm(g_n.flatten()) ** 2 + 1e-8)
+                projection = torch.dot(g_s.flatten(), g_n.flatten()) / (
+                    torch.norm(g_n.flatten()) ** 2 + 1e-8
+                )
                 g_s_proj = g_s - projection * g_n
                 projected_grads.append(g_s_proj)
             else:
-                projected_grads.append(g_s)  # Use original gradient if no projection needed
+                projected_grads.append(
+                    g_s
+                )  # Use original gradient if no projection needed
         return projected_grads
 
     def randomize_forget_set(self, dataloader):
@@ -89,7 +95,9 @@ class Trainer:
                 loss = -loss
             if operation == "pgd":
                 if grad_sensitive is not None and grad_normal is not None:
-                    projected_grads = self.project_gradients(grad_sensitive, grad_normal)
+                    projected_grads = self.project_gradients(
+                        grad_sensitive, grad_normal
+                    )
                     for param, grad in zip(self.model.parameters(), projected_grads):
                         if grad is not None:
                             param.grad = grad
@@ -130,27 +138,34 @@ class Trainer:
         pgd_loss = self._train_ga_da_epoch(self.forget_trainloader, "pgd", epoch)
         self.logger.info(
             "[Train Summary] Epoch:{}\t Ran Loss:{:.4f}\t Retain Loss:{:.4f}\t PGD Loss:{:.4f}".format(
-                epoch, ran_loss, retain_loss, pgd_loss)
+                epoch, ran_loss, retain_loss, pgd_loss
+            )
         )
         weight_ran = 0.25
         weight_retain = 0.4
         weight_forget = 0.1
         weight_pgd = 0.25
 
-        combined_loss = weight_ran * ran_loss + weight_retain * retain_loss + weight_pgd * pgd_loss
+        combined_loss = (
+            weight_ran * ran_loss + weight_retain * retain_loss + weight_pgd * pgd_loss
+        )
 
-        return {"combined_loss": combined_loss, "ran_loss": ran_loss, "retain_loss": retain_loss, "pgd_loss": pgd_loss}
+        return {
+            "combined_loss": combined_loss,
+            "ran_loss": ran_loss,
+            "retain_loss": retain_loss,
+            "pgd_loss": pgd_loss,
+        }
 
     def _eval_epoch(self):
         pass
 
-    def save_model(self, output_dir):
-        os.makedirs(output_dir, exist_ok=True)
-        self.accelerator.wait_for_everyone()  # Ensure all processes are synchronized
-        self.accelerator.unwrap_model(self.model).save_pretrained(output_dir)
-        self.logger.info(f"Model saved to {output_dir}")
-
     def train(self):
         for epoch in range(self.epochs):
             self._train_epoch(epoch)
-        self.save_model("NLP_243_Final_Proj/output_model")
+        unwrapped_model = self.accelerator.unwrap_model(self.model)
+        unwrapped_model.save_pretrained(
+            self.chkpt_dir,
+            is_main_process=self.accelerator.is_main_process,
+            save_function=self.accelerator.save,
+        )

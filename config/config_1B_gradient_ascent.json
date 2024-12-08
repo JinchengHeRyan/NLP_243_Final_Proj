@@ -71,5 +71,9 @@
     "args": {
       "lr": 0.000001
     }
+  },
+  "Trainer": {
+    "type": "Trainer_GA",
+    "args": {}
   }
 }
