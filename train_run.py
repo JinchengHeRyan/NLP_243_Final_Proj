@@ -13,7 +13,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import dataloader
 import dataset
 from utils.utils import get_instance
-from Trainer import Trainer
+import trainer as trainer_
 
 SEED = 123
 random.seed(SEED)
@@ -90,7 +90,9 @@ def main(config, name, print_freq):
     logger.info(model)
     logger.info("-" * 50)
 
-    trainer = Trainer(
+    trainer = get_instance(
+        trainer_,
+        config["Trainer"],
         accelerator=accelerator,
         chkpt_dir=chkpt_dir,
         model=model,
