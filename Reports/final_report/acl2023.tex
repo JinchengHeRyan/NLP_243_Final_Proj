@@ -170,11 +170,9 @@
         \]
 
         where $\mathcal{L}_{\text{NPO}}$ is the loss function, and $\theta_t$ are the model parameters. NPO's loss is:
-
         \[
             \resizebox{\columnwidth}{!}{$\mathcal{L}_{\text{NPO}} = -\mathbf{E}_{(x,y) \sim \mathcal{D}_{\text{forget}}} \left[ \log \left(1 - \frac{\pi_\theta(y|x)}{\pi_\theta(y|x) + \pi_{\text{ref}}(y|x)} \right) \right]$}
         \]
-
 
         An enhanced version incorporates a retain loss term:
         \vspace{-3pt}
@@ -223,7 +221,7 @@
 
 
     \section{Experiments}
-    We will compare model performance against a baseline, measuring the extent of sensitive content suppression and the model's general accuracy on language tasks. Control studies with annotated prompts will test sensitivity handling.
+    Unfortunately Embedding Corrupted(ECO) does not apply to this specific task as it only works in inference phase. Therefore, we moved on to test the other three approaches listed before.
 
     \subsection{Methodology}
     The training and evaluation process incorporated the following steps:
@@ -236,9 +234,11 @@
             \item \textbf{Projected Gradient Descent (PGD):} Gradients from the forget set were projected to reduce interference with gradients from the retain set.
         \end{itemize}
         \item \textbf{Combined Loss Function:} A weighted loss function was designed to integrate the contributions of Ran, GD, GA, and PGD operations:
+            {\small
         \[
             \text{Loss} = 0.25 \times (Loss_{Ran} + Loss_{GD} + Loss_{GD} + Loss_{PGD}).
         \]
+        }
         \item \textbf{Training Configuration:} Training was conducted for 10 epochs using a predefined model architecture and dataloaders. The model performance was monitored using loss trends across all four operations.
     \end{itemize}
 
@@ -253,15 +253,17 @@
     1. Identify the LCS: Determine the length of the longest common subsequence between the generated summary and the reference summary.
     2. Calculate Precision and Recall:
     - \textbf{Precision} measures the proportion of the LCS length to the total number of words in the generated summary:
+        {\small
     \begin{equation}
         \text{Precision} = \frac{\text{Length of LCS}}{\text{Total number of words in generated summary}}
     \end{equation}
-
+    }
     - \textbf{Recall} measures the proportion of the LCS length to the total number of words in the reference summary:
+        {\small
     \begin{equation}
         \text{Recall} = \frac{\text{Length of LCS}}{\text{Total number of words in reference summary}}
     \end{equation}
-
+    }
     3. F-measure: The ROUGE-L score is often presented as an F-measure, which combines precision and recall. The F-measure is calculated as follows:
     \begin{equation}
         \text{F-measure} = \frac{(1 + \beta^2) \cdot \text{Precision} \cdot \text{Recall}}{\beta^2 \cdot \text{Precision} + \text{Recall}}
